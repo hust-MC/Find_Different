@@ -1,45 +1,62 @@
 package com.emercy.finddiff;
 
-import java.text.BreakIterator;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
+import android.graphics.YuvImage;
+import android.util.Log;
+import android.view.SurfaceHolder;
+import android.view.SurfaceHolder.Callback;
 import android.graphics.Bitmap.Config;
 import android.hardware.Camera;
+import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PreviewCallback;
+import android.hardware.Camera.Size;
+import android.view.SurfaceView;
 
 public class GetScreen implements PreviewCallback
 {
-	private final int degree = 90;
-	private final int focusThreshold = 5;
-	private int bright, lastBright;
-	private Boolean isFocus;
+	private Camera camera;
+	Size size;
 
-	Camera camera;
+	Boolean go = true;
+	private SurfaceTexture surfaceTexture;
+	private SurfaceHolder holder;
+	private final int focusThreshold = 5;
+
+	private double bright, lastBright;
+	private Boolean hasFocus = false;
+
 	int width, height;
 
 	private Bitmap bitmap;
 
-	public Bitmap getBitmap()
+	public GetScreen(Context context) throws IOException
 	{
-		return bitmap;
-	}
-	public void setBitmap(Bitmap bitmap)
-	{
-		this.bitmap = bitmap;
+		surfaceTexture = new SurfaceTexture(0);
+		camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+		size = camera.getParameters().getPreviewSize();
+		width = size.width;
+		height = size.height;
+		camera.setPreviewTexture(surfaceTexture);
+		camera.startPreview();
+		camera.setPreviewCallback(this);
 	}
 
-	public GetScreen(Camera camera)
-	{
-		this.camera = camera;
-		width = camera.getParameters().getPreviewSize().width;
-		height = camera.getParameters().getPreviewSize().height;
-	}
 	static public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height)
 	{
 		final int frameSize = width * height;
-
 		for (int j = 0, yp = 0; j < height; j++)
 		{
 			int uvp = frameSize + (j >> 1) * width, u = 0, v = 0;
@@ -93,24 +110,47 @@ public class GetScreen implements PreviewCallback
 		return bright / rgb.length;
 	}
 
+	private void autoFocus()
+	{
+		camera.autoFocus(new AutoFocusCallback()
+		{
+			@Override
+			public void onAutoFocus(boolean success, Camera camera)
+			{
+
+			}
+		});
+	}
+
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera)
 	{
 		int[] rgb = new int[data.length];
+		long currentTime = 0, stableTime = 0;
 		decodeYUV420SP(rgb, data, width, height);
 
 		Matrix m = new Matrix();
-		m.postRotate(degree);
+		m.postRotate(90);
 
 		Bitmap temp = Bitmap.createBitmap(rgb, width, height, Config.RGB_565);
 		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
-
 		MainActivity.setImageView(bitmap);
 
-		if (Math.abs(bright - lastBright) < focusThreshold)
+		currentTime = System.currentTimeMillis();
+		bright = getLight(rgb);
+		if (Math.abs(bright - lastBright) > focusThreshold)
 		{
-			
+			lastBright = bright;
+			hasFocus = false;
+			stableTime = currentTime;
 		}
-
+		else
+		{
+			if (!hasFocus && currentTime - stableTime >= 500)
+			{
+				autoFocus();
+				hasFocus = true;
+			}
+		}
 	}
 }
