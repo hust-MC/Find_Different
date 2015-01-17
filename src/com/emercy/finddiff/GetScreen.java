@@ -1,28 +1,16 @@
 package com.emercy.finddiff;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.ImageFormat;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.SurfaceTexture;
-import android.graphics.YuvImage;
-import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.SurfaceHolder.Callback;
 import android.graphics.Bitmap.Config;
+import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
-import android.view.SurfaceView;
 
 public class GetScreen implements PreviewCallback
 {
@@ -31,7 +19,6 @@ public class GetScreen implements PreviewCallback
 
 	Boolean go = true;
 	private SurfaceTexture surfaceTexture;
-	private SurfaceHolder holder;
 	private final int focusThreshold = 5;
 
 	private double bright, lastBright;
