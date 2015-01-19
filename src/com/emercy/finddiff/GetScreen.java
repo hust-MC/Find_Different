@@ -1,7 +1,6 @@
 package com.emercy.finddiff;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -39,9 +38,9 @@ public class GetScreen implements PreviewCallback
 
 	private File file;					// 存储数据
 	private FileWriter fw;
-	private FileInputStream fis;
 
 	private int[] rgb;
+	private int alpha = 0xff << 24;
 
 	public GetScreen(Context context) throws IOException
 	{
@@ -116,6 +115,21 @@ public class GetScreen implements PreviewCallback
 		}
 	}
 
+	private void convertToGrey(int[] rgb)
+	{
+		int localTemp, r, g, b, bright;
+		for (int i = 0; i < rgb.length; ++i)
+		{
+			localTemp = rgb[i];
+			r = (localTemp >> 16) & 0xff;
+			g = (localTemp >> 8) & 0xff;
+			b = localTemp & 0xff;
+
+			bright = (int) (0.299 * r + 0.587 * g + 0.114 * b);
+			rgb[i] = alpha | bright << 16 | bright << 8 | bright;
+		}
+	}
+
 	public double getLight(int rgb[])
 	{
 		int i;
@@ -149,6 +163,8 @@ public class GetScreen implements PreviewCallback
 		rgb = new int[width * height];
 		long currentTime = 0, stableTime = 0;
 		decodeYUV420SP(rgb, data, width, height);
+
+		convertToGrey(rgb);
 
 		Matrix m = new Matrix();
 		m.postRotate(90);
@@ -200,7 +216,6 @@ public class GetScreen implements PreviewCallback
 		if (file.exists())
 		{
 			fw = new FileWriter(file, false);
-			Log.d("MC", "overwrite");
 		}
 		if (takePic)
 		{
