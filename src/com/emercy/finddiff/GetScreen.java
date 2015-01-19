@@ -1,16 +1,23 @@
 package com.emercy.finddiff;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
+import android.os.Environment;
+import android.util.Log;
 
 public class GetScreen implements PreviewCallback
 {
@@ -22,15 +29,35 @@ public class GetScreen implements PreviewCallback
 	private final int focusThreshold = 5;
 
 	private double bright, lastBright;
-	private Boolean hasFocus = false;
+	private boolean hasFocus;
 
 	int width, height;
 
+	private boolean takePic = true;		// 按键选项
+
 	private Bitmap bitmap;
+
+	private File file;					// 存储数据
+	private FileWriter fw;
+	private FileInputStream fis;
+
+	private int[] rgb;
 
 	public GetScreen(Context context) throws IOException
 	{
+		Log.d("MC", "constructor");
+		file = new File(Environment.getExternalStorageDirectory().getPath()
+				+ "/360/a123.txt");
+		if (!file.exists())
+		{
+			file.createNewFile();
+		}
 		surfaceTexture = new SurfaceTexture(0);
+
+		startCamera();
+	}
+	void startCamera() throws IOException
+	{
 		camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
 		size = camera.getParameters().getPreviewSize();
 		width = size.width;
@@ -40,8 +67,15 @@ public class GetScreen implements PreviewCallback
 		camera.setPreviewCallback(this);
 	}
 
-	static public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
-			int height)
+	void stopCamera()
+	{
+		camera.setPreviewCallback(null);
+		camera.stopPreview();
+		camera.release();
+		camera = null;
+	}
+
+	public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width, int height)
 	{
 		final int frameSize = width * height;
 		for (int j = 0, yp = 0; j < height; j++)
@@ -112,7 +146,7 @@ public class GetScreen implements PreviewCallback
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera)
 	{
-		int[] rgb = new int[data.length];
+		rgb = new int[width * height];
 		long currentTime = 0, stableTime = 0;
 		decodeYUV420SP(rgb, data, width, height);
 
@@ -120,6 +154,7 @@ public class GetScreen implements PreviewCallback
 		m.postRotate(90);
 
 		Bitmap temp = Bitmap.createBitmap(rgb, width, height, Config.RGB_565);
+		Log.d("MC", rgb.length + "");
 		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
 		MainActivity.setImageView(bitmap);
 
@@ -140,4 +175,56 @@ public class GetScreen implements PreviewCallback
 			}
 		}
 	}
+
+	private void saveRGB() throws IOException
+	{
+		if (file.exists())
+		{
+			fw = new FileWriter(file, false);
+			Log.d("MC", "overwrite");
+		}
+
+		for (int i = 0; i < width; i++)
+		{
+			for (int j = 0; j < height; j++)
+			{
+				fw.write(Integer.toHexString(rgb[height * i + j]) + " ");
+			}
+			fw.write("\n\r");
+		}
+		fw.close();
+		Log.d("MC", "saveRGB");
+	}
+	void takePic() throws IOException
+	{
+		if (file.exists())
+		{
+			fw = new FileWriter(file, false);
+			Log.d("MC", "overwrite");
+		}
+		if (takePic)
+		{
+			camera.takePicture(null, null, pictureCallback);
+			stopCamera();
+
+			saveRGB();
+
+			takePic = false;
+		}
+		else
+		{
+			startCamera();
+			takePic = true;
+		}
+	}
+
+	PictureCallback pictureCallback = new PictureCallback()
+	{
+		@Override
+		public void onPictureTaken(byte[] data, Camera camera)
+		{
+			bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+		}
+	};
+
 }

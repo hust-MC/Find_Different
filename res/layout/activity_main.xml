@@ -10,4 +10,12 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <Button 
+        android:id="@+id/takePic_bt"
+        android:layout_height="50dp"
+        android:layout_width="50dp"
+        android:background="@android:color/holo_orange_light"
+        android:onClick="onClick_takePic"
+        android:layout_alignParentBottom="true"/>
+    
 </RelativeLayout>
