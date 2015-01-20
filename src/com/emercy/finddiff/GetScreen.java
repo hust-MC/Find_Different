@@ -3,6 +3,7 @@ package com.emercy.finddiff;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,8 +16,6 @@ import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
-import android.os.Environment;
-import android.util.Log;
 
 public class GetScreen implements PreviewCallback
 {
@@ -31,6 +30,7 @@ public class GetScreen implements PreviewCallback
 	private boolean hasFocus;
 
 	int width, height;
+	final int picThreshold = 100;
 
 	private boolean takePic = true;		// 按键选项
 
@@ -40,17 +40,16 @@ public class GetScreen implements PreviewCallback
 	private FileWriter fw;
 
 	private int[] rgb;
-	private int alpha = 0xff << 24;
+	private int[] sobelArray;
 
 	public GetScreen(Context context) throws IOException
 	{
-		Log.d("MC", "constructor");
-		file = new File(Environment.getExternalStorageDirectory().getPath()
-				+ "/360/a123.txt");
-		if (!file.exists())
-		{
-			file.createNewFile();
-		}
+		// file = new File(Environment.getExternalStorageDirectory().getPath()
+		// + "/360/a123.txt");
+		// if (!file.exists())
+		// {
+		// file.createNewFile();
+		// }
 		surfaceTexture = new SurfaceTexture(0);
 
 		startCamera();
@@ -74,108 +73,13 @@ public class GetScreen implements PreviewCallback
 		camera = null;
 	}
 
-	public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width, int height)
-	{
-		final int frameSize = width * height;
-		for (int j = 0, yp = 0; j < height; j++)
-		{
-			int uvp = frameSize + (j >> 1) * width, u = 0, v = 0;
-			for (int i = 0; i < width; i++, yp++)
-			{
-				int y = (0xff & ((int) yuv420sp[yp])) - 16;
-				if (y < 0)
-					y = 0;
-				if ((i & 1) == 0)
-				{
-					v = (0xff & yuv420sp[uvp++]) - 128;
-					u = (0xff & yuv420sp[uvp++]) - 128;
-				}
-
-				int y1192 = 1192 * y;
-				int r = (y1192 + 1634 * v);
-				int g = (y1192 - 833 * v - 400 * u);
-				int b = (y1192 + 2066 * u);
-
-				if (r < 0)
-					r = 0;
-				else if (r > 262143)
-					r = 262143;
-				if (g < 0)
-					g = 0;
-				else if (g > 262143)
-					g = 262143;
-				if (b < 0)
-					b = 0;
-				else if (b > 262143)
-					b = 262143;
-
-				rgb[yp] = 0xff000000 | ((r << 6) & 0xff0000)
-						| ((g >> 2) & 0xff00) | ((b >> 10) & 0xff);
-			}
-		}
-	}
-
-	private void convertToGrey(int[] rgb)
-	{
-		int localTemp, r, g, b, bright;
-		for (int i = 0; i < rgb.length; ++i)
-		{
-			localTemp = rgb[i];
-			r = (localTemp >> 16) & 0xff;
-			g = (localTemp >> 8) & 0xff;
-			b = localTemp & 0xff;
-
-			bright = (int) (0.299 * r + 0.587 * g + 0.114 * b);
-			rgb[i] = alpha | bright << 16 | bright << 8 | bright;
-		}
-	}
-
-	public double getLight(int rgb[])
-	{
-		int i;
-		double bright = 0;
-		for (i = 0; i < rgb.length; ++i)
-		{
-			int localTemp = rgb[i];
-			int r = (localTemp | 0xff00ffff) >> 16 & 0x00ff;
-			int g = (localTemp | 0xffff00ff) >> 8 & 0x0000ff;
-			int b = (localTemp | 0xffffff00) & 0x0000ff;
-			bright = bright + 0.299 * r + 0.587 * g + 0.114 * b;
-		}
-		return bright / rgb.length;
-	}
-
 	private void autoFocus()
 	{
-		camera.autoFocus(new AutoFocusCallback()
-		{
-			@Override
-			public void onAutoFocus(boolean success, Camera camera)
-			{
-
-			}
-		});
-	}
-
-	@Override
-	public void onPreviewFrame(byte[] data, Camera camera)
-	{
-		rgb = new int[width * height];
 		long currentTime = 0, stableTime = 0;
-		decodeYUV420SP(rgb, data, width, height);
-
-		convertToGrey(rgb);
-
-		Matrix m = new Matrix();
-		m.postRotate(90);
-
-		Bitmap temp = Bitmap.createBitmap(rgb, width, height, Config.RGB_565);
-		Log.d("MC", rgb.length + "");
-		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
-		MainActivity.setImageView(bitmap);
 
 		currentTime = System.currentTimeMillis();
-		bright = getLight(rgb);
+		bright = Pictures.getLight(rgb);
+
 		if (Math.abs(bright - lastBright) > focusThreshold)
 		{
 			lastBright = bright;
@@ -186,10 +90,42 @@ public class GetScreen implements PreviewCallback
 		{
 			if (!hasFocus && currentTime - stableTime >= 500)
 			{
-				autoFocus();
+				camera.autoFocus(new AutoFocusCallback()
+				{
+					@Override
+					public void onAutoFocus(boolean success, Camera camera)
+					{
+
+					}
+				});
+
 				hasFocus = true;
 			}
 		}
+	}
+
+	@Override
+	public void onPreviewFrame(byte[] data, Camera camera)
+	{
+		rgb = new int[width * height];
+		sobelArray = new int[rgb.length];
+
+		Pictures.decodeYUV420SP(rgb, data, width, height);
+
+		Pictures.convertToGrey(rgb);
+
+		Matrix m = new Matrix();
+		m.postRotate(90);
+
+		sobelArray = Pictures.sobel(rgb, width, height);
+		Pictures.turnTo2(sobelArray);
+		
+		Bitmap temp = Bitmap.createBitmap(sobelArray, width, height,
+				Config.RGB_565);
+		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
+		MainActivity.setImageView(bitmap);
+
+		autoFocus();
 	}
 
 	private void saveRGB() throws IOException
@@ -197,7 +133,6 @@ public class GetScreen implements PreviewCallback
 		if (file.exists())
 		{
 			fw = new FileWriter(file, false);
-			Log.d("MC", "overwrite");
 		}
 
 		for (int i = 0; i < width; i++)
@@ -209,21 +144,19 @@ public class GetScreen implements PreviewCallback
 			fw.write("\n\r");
 		}
 		fw.close();
-		Log.d("MC", "saveRGB");
 	}
 	void takePic() throws IOException
 	{
-		if (file.exists())
-		{
-			fw = new FileWriter(file, false);
-		}
+//		if (file.exists())
+//		{
+//			fw = new FileWriter(file, false);
+//		}
 		if (takePic)
 		{
 			camera.takePicture(null, null, pictureCallback);
 			stopCamera();
 
-			saveRGB();
-
+			// saveRGB();
 			takePic = false;
 		}
 		else
