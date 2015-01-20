@@ -3,7 +3,6 @@ package com.emercy.finddiff;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Arrays;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -16,6 +15,7 @@ import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
+import android.util.Log;
 
 public class GetScreen implements PreviewCallback
 {
@@ -41,6 +41,7 @@ public class GetScreen implements PreviewCallback
 
 	private int[] rgb;
 	private int[] sobelArray;
+	Matrix m = new Matrix();;
 
 	public GetScreen(Context context) throws IOException
 	{
@@ -50,6 +51,8 @@ public class GetScreen implements PreviewCallback
 		// {
 		// file.createNewFile();
 		// }
+
+		m.postRotate(90);
 		surfaceTexture = new SurfaceTexture(0);
 
 		startCamera();
@@ -119,7 +122,7 @@ public class GetScreen implements PreviewCallback
 
 		sobelArray = Pictures.sobel(rgb, width, height);
 		Pictures.turnTo2(sobelArray);
-		
+
 		Bitmap temp = Bitmap.createBitmap(sobelArray, width, height,
 				Config.RGB_565);
 		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
@@ -147,12 +150,19 @@ public class GetScreen implements PreviewCallback
 	}
 	void takePic() throws IOException
 	{
-//		if (file.exists())
-//		{
-//			fw = new FileWriter(file, false);
-//		}
+		Log.d("MC", "take");
+		// if (file.exists())
+		// {
+		// fw = new FileWriter(file, false);
+		// }
 		if (takePic)
 		{
+			Bitmap temp = Bitmap.createBitmap(
+					Pictures.findFrame(sobelArray, width, height), width,
+					height, Config.RGB_565);
+			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
+			MainActivity.setImageView(bitmap);
+
 			camera.takePicture(null, null, pictureCallback);
 			stopCamera();
 
@@ -171,7 +181,14 @@ public class GetScreen implements PreviewCallback
 		@Override
 		public void onPictureTaken(byte[] data, Camera camera)
 		{
-			bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+			// bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+
+			Bitmap temp = Bitmap.createBitmap(
+					Pictures.findFrame(sobelArray, width, height), width,
+					height, Config.RGB_565);
+			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
+			Log.d("MC", "call back");
+			MainActivity.setImageView(bitmap);
 		}
 	};
 

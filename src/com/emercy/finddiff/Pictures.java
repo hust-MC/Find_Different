@@ -148,13 +148,42 @@ public class Pictures
 	{
 		int[] frame = new int[pic.length];
 
-		for (int i = 0; i < width; i++)
+		for (int i = 0; i < width; i++)				// 上边缘
 		{
 			for (int j = 0; j < height / 2; j++)
 			{
-				if (pic[i * height / 2 + j] == WHITE)
+				if (pic[j * width + i] == WHITE)
 				{
-					
+					frame[j * width + i] = WHITE;
+					break;
+				}
+			}
+			for (int j = height - 1; j > height / 2; j--)
+			{
+				if (pic[j * width + i] == WHITE)
+				{
+					frame[j * width + i] = WHITE;
+					break;
+				}
+			}
+		}
+
+		for (int i = 0; i < height; i++)				// 左边缘
+		{
+			for (int j = 0; j < width / 2; j++)
+			{
+				if (pic[i * width + j] == WHITE)
+				{
+					frame[i * width + j] = WHITE;
+					break;
+				}
+			}
+			for (int j = width - 1; j > width / 2; j--)
+			{
+				if (pic[i * width + j] == WHITE)
+				{
+					frame[i * width + j] = WHITE;
+					break;
 				}
 			}
 		}
