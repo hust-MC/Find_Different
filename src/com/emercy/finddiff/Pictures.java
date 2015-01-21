@@ -3,8 +3,8 @@ package com.emercy.finddiff;
 public class Pictures
 {
 	private static final int ALPHA = 0xff << 24;
-	private static final int BLACK = 0x0;
-	private static final int WHITE = 0xffffffff;
+	private static final int BLACK = ALPHA | 0x0;
+	private static final int WHITE = ALPHA | 0xffffff;
 
 	private static int[][] sobel_h =
 	{
@@ -140,7 +140,7 @@ public class Pictures
 	{
 		for (int i = 0; i < pic.length; i++)
 		{
-			pic[i] = (pic[i] & 0xff) > 240 ? 0xffffffff : 0;
+			pic[i] = (pic[i] & 0xff) > 240 ? WHITE : BLACK;
 		}
 	}
 
@@ -189,4 +189,5 @@ public class Pictures
 		}
 		return frame;
 	}
+	
 }

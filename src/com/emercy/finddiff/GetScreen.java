@@ -3,6 +3,7 @@ package com.emercy.finddiff;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,6 +16,7 @@ import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
+import android.os.Environment;
 import android.util.Log;
 
 public class GetScreen implements PreviewCallback
@@ -30,27 +32,34 @@ public class GetScreen implements PreviewCallback
 	private boolean hasFocus;
 
 	int width, height;
-	final int picThreshold = 100;
+	private final int picThreshold = 240;
 
-	private boolean takePic = true;		// 按键选项
+	private final int TAKE_PIC = 1;		// 按键选项
+	private final int PROCESS_PIC = 2; 	// 处理图像
+	private final int PREVIEW_PIC = 3;	// 继续拍照
+	int state = TAKE_PIC;			// 按键状态机
 
 	private Bitmap bitmap;
 
 	private File file;					// 存储数据
 	private FileWriter fw;
 
+	/*
+	 * 图片数组
+	 */
 	private int[] rgb;
 	private int[] sobelArray;
-	Matrix m = new Matrix();;
+
+	Matrix m = new Matrix();
 
 	public GetScreen(Context context) throws IOException
 	{
-		// file = new File(Environment.getExternalStorageDirectory().getPath()
-		// + "/360/a123.txt");
-		// if (!file.exists())
-		// {
-		// file.createNewFile();
-		// }
+		file = new File(Environment.getExternalStorageDirectory().getPath()
+				+ "/360/a123.txt");
+		if (!file.exists())
+		{
+			file.createNewFile();
+		}
 
 		m.postRotate(90);
 		surfaceTexture = new SurfaceTexture(0);
@@ -67,7 +76,6 @@ public class GetScreen implements PreviewCallback
 		camera.startPreview();
 		camera.setPreviewCallback(this);
 	}
-
 	void stopCamera()
 	{
 		camera.setPreviewCallback(null);
@@ -117,9 +125,6 @@ public class GetScreen implements PreviewCallback
 
 		Pictures.convertToGrey(rgb);
 
-		Matrix m = new Matrix();
-		m.postRotate(90);
-
 		sobelArray = Pictures.sobel(rgb, width, height);
 		Pictures.turnTo2(sobelArray);
 
@@ -131,18 +136,18 @@ public class GetScreen implements PreviewCallback
 		autoFocus();
 	}
 
-	private void saveRGB() throws IOException
+	private void saveRGB(int[] pic) throws IOException
 	{
 		if (file.exists())
 		{
 			fw = new FileWriter(file, false);
 		}
 
-		for (int i = 0; i < width; i++)
+		for (int i = 0; i < height; i++)
 		{
-			for (int j = 0; j < height; j++)
+			for (int j = 0; j < width; j++)
 			{
-				fw.write(Integer.toHexString(rgb[height * i + j]) + " ");
+				fw.write(Integer.toHexString(pic[width * i + j]) + " ");
 			}
 			fw.write("\n\r");
 		}
@@ -150,29 +155,39 @@ public class GetScreen implements PreviewCallback
 	}
 	void takePic() throws IOException
 	{
-		Log.d("MC", "take");
-		// if (file.exists())
-		// {
-		// fw = new FileWriter(file, false);
-		// }
-		if (takePic)
-		{
-			Bitmap temp = Bitmap.createBitmap(
-					Pictures.findFrame(sobelArray, width, height), width,
-					height, Config.RGB_565);
-			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
-			MainActivity.setImageView(bitmap);
 
-			camera.takePicture(null, null, pictureCallback);
+		switch (state)
+		{
+		case TAKE_PIC:
+		{
+			Log.d("MC", "take_pic");
 			stopCamera();
 
-			// saveRGB();
-			takePic = false;
+			state = PROCESS_PIC;
+
+			break;
 		}
-		else
+		case PROCESS_PIC:
+		{
+			int[] thresholding = Pictures.findFrame(sobelArray, width, height);
+			Bitmap temp = Bitmap.createBitmap(thresholding, width, height,
+					Config.RGB_565);
+
+			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
+			MainActivity.setImageView(bitmap);
+			saveRGB(thresholding);
+			state = PREVIEW_PIC;
+			// camera.takePicture(null, null, pictureCallback);
+
+			break;
+		}
+		case PREVIEW_PIC:
 		{
 			startCamera();
-			takePic = true;
+			state = TAKE_PIC;
+
+			break;
+		}
 		}
 	}
 
