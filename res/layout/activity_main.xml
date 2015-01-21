@@ -10,12 +10,21 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <Button 
+    <View
+        android:layout_width="2dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="60dp"
+        android:layout_marginRight="50dp"
+        android:layout_marginTop="60dp"
+        android:background="#46FF62" />
+
+    <Button
         android:id="@+id/takePic_bt"
-        android:layout_height="50dp"
         android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
         android:background="@android:color/holo_orange_light"
-        android:onClick="onClick_takePic"
-        android:layout_alignParentBottom="true"/>
-    
+        android:onClick="onClick_takePic" />
+
 </RelativeLayout>

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -13,6 +14,7 @@ import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
+import android.hardware.Camera.Parameters;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
@@ -23,16 +25,17 @@ public class GetScreen implements PreviewCallback
 {
 	private Camera camera;
 	Size size;
+	Parameters parameters;
 
 	Boolean go = true;
 	private SurfaceTexture surfaceTexture;
-	private final int focusThreshold = 5;
 
 	private double bright, lastBright;
 	private boolean hasFocus;
 
 	int width, height;
-	private final int picThreshold = 240;
+
+	private final int focusThreshold = 5;
 
 	private final int TAKE_PIC = 1;		// 按键选项
 	private final int PROCESS_PIC = 2; 	// 处理图像
@@ -47,8 +50,7 @@ public class GetScreen implements PreviewCallback
 	/*
 	 * 图片数组
 	 */
-	private int[] rgb;
-	private int[] sobelArray;
+	private int[] rgb, sobelPic, grey;
 
 	Matrix m = new Matrix();
 
@@ -69,9 +71,28 @@ public class GetScreen implements PreviewCallback
 	void startCamera() throws IOException
 	{
 		camera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
-		size = camera.getParameters().getPreviewSize();
+		parameters = camera.getParameters();
+		parameters.setPreviewSize(Pictures.WIDTH, Pictures.HEIGHT);
+		camera.setParameters(parameters);
+
+		size = parameters.getPreviewSize();
 		width = size.width;
 		height = size.height;
+
+		// List<Integer> previewFormat = camera.getParameters()
+		// .getSupportedPreviewFormats();
+		// for (int i : previewFormat)
+		// {
+		// Log.d("MC", i + "");
+		// }
+		// Log.d("MC", "==============");
+		// List<Camera.Size> previewSize = camera.getParameters()
+		// .getSupportedPreviewSizes();
+		// for (Size i : previewSize)
+		// {
+		// Log.d("MC", i.width + " " + i.height);
+		// }
+
 		camera.setPreviewTexture(surfaceTexture);
 		camera.startPreview();
 		camera.setPreviewCallback(this);
@@ -118,17 +139,18 @@ public class GetScreen implements PreviewCallback
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera)
 	{
-		rgb = new int[width * height];
-		sobelArray = new int[rgb.length];
+		rgb = new int[Pictures.PIC_LENGTH];
+		sobelPic = new int[Pictures.PIC_LENGTH];
+		grey = new int[Pictures.PIC_LENGTH];
 
 		Pictures.decodeYUV420SP(rgb, data, width, height);
 
-		Pictures.convertToGrey(rgb);
+		Pictures.convertToGrey(rgb, grey);
 
-		sobelArray = Pictures.sobel(rgb, width, height);
-		Pictures.turnTo2(sobelArray);
+		Pictures.sobel(grey, width, height, sobelPic);
+		Pictures.turnTo2(sobelPic);
 
-		Bitmap temp = Bitmap.createBitmap(sobelArray, width, height,
+		Bitmap temp = Bitmap.createBitmap(sobelPic, width, height,
 				Config.RGB_565);
 		bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
 		MainActivity.setImageView(bitmap);
@@ -169,13 +191,13 @@ public class GetScreen implements PreviewCallback
 		}
 		case PROCESS_PIC:
 		{
-			int[] thresholding = Pictures.findFrame(sobelArray, width, height);
+			int[] thresholding = Pictures.findFrame(sobelPic, width, height);
 			Bitmap temp = Bitmap.createBitmap(thresholding, width, height,
 					Config.RGB_565);
 
 			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
 			MainActivity.setImageView(bitmap);
-			saveRGB(thresholding);
+			// saveRGB(thresholding);
 			state = PREVIEW_PIC;
 			// camera.takePicture(null, null, pictureCallback);
 
@@ -199,8 +221,8 @@ public class GetScreen implements PreviewCallback
 			// bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
 
 			Bitmap temp = Bitmap.createBitmap(
-					Pictures.findFrame(sobelArray, width, height), width,
-					height, Config.RGB_565);
+					Pictures.findFrame(sobelPic, width, height), width, height,
+					Config.RGB_565);
 			bitmap = Bitmap.createBitmap(temp, 0, 0, width, height, m, true);
 			Log.d("MC", "call back");
 			MainActivity.setImageView(bitmap);

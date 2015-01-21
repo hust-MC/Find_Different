@@ -1,10 +1,20 @@
 package com.emercy.finddiff;
 
+import android.util.Log;
+
 public class Pictures
 {
 	private static final int ALPHA = 0xff << 24;
 	private static final int BLACK = ALPHA | 0x0;
 	private static final int WHITE = ALPHA | 0xffffff;
+	private static final int picThreshold = 240;
+
+	public static final int WIDTH = 480, HEIGHT = 320;
+	public static final int PIC_LENGTH = WIDTH * HEIGHT;
+
+	private static boolean hasFirstPointFound;
+
+	private static Vertext[] vertexts = new Vertext[4];
 
 	private static int[][] sobel_h =
 	{
@@ -16,8 +26,6 @@ public class Pictures
 	{ 1, 0, -1 },
 	{ 2, 0, -2 },
 	{ 1, 0, -1 } };
-
-	private static int[] sobelPic;
 
 	static public void decodeYUV420SP(int[] rgb, byte[] yuv420sp, int width,
 			int height)
@@ -76,7 +84,7 @@ public class Pictures
 		return bright / rgb.length;
 	}
 
-	private static void getBrightArray(int[] rgb)
+	private static void getBrightArray(int[] rgb, short[] brightArray)
 	{
 		int localTemp, r, g, b;
 		for (int i = 0; i < rgb.length; ++i)
@@ -86,27 +94,29 @@ public class Pictures
 			g = (localTemp >> 8) & 0xff;
 			b = localTemp & 0xff;
 
-			rgb[i] = (int) (0.299 * r + 0.587 * g + 0.114 * b);
+			brightArray[i] = (short) (0.299 * r + 0.587 * g + 0.114 * b);
 		}
 	}
-
-	static public void convertToGrey(int[] rgb)
+	static public void convertToGrey(int[] rgb, int[] grey)
 	{
 		int bright = 0;
-		getBrightArray(rgb);
-		for (int i = 0; i < rgb.length; i++)
+		short[] brightArray = new short[rgb.length];
+
+		getBrightArray(rgb, brightArray);
+
+		for (int i = 0; i < Pictures.PIC_LENGTH; i++)
 		{
-			bright = rgb[i] & 0xff;
-			rgb[i] = (ALPHA | bright << 16 | bright << 8 | bright);
+			bright = brightArray[i] & 0xff;
+			grey[i] = (ALPHA | bright << 16 | bright << 8 | bright);
 		}
 	}
-	static public int[] sobel(int[] rgb, int width, int height)
+	static public void sobel(int[] grey, int width, int height, int[] sobelPic)
 	{
-		sobelPic = new int[rgb.length];
+		short[] brightArray = new short[grey.length];
 
 		int sumH = 0, sumV = 0, sum = 0;
 
-		getBrightArray(rgb);
+		getBrightArray(grey, brightArray);
 
 		for (int i = 1; i < height - 1; i++)
 		{
@@ -118,9 +128,9 @@ public class Pictures
 					for (int n = 0; n < 3; n++)
 					{
 						sumH += sobel_h[m][n]
-								* rgb[(i - 1 + m) * width + j - 1 + n];
+								* brightArray[(i - 1 + m) * width + j - 1 + n];
 						sumV += sobel_v[m][n]
-								* rgb[(i - 1 + m) * width + j - 1 + n];
+								* brightArray[(i - 1 + m) * width + j - 1 + n];
 					}
 				}
 				sumH = sumH > 0 ? sumH : sumH * -1;
@@ -133,20 +143,25 @@ public class Pictures
 				sobelPic[i * width + j] = (ALPHA | sum << 16 | sum << 8 | sum);
 			}
 		}
-		return sobelPic;
 	}
-
 	static void turnTo2(int[] pic)
 	{
 		for (int i = 0; i < pic.length; i++)
 		{
-			pic[i] = (pic[i] & 0xff) > 240 ? WHITE : BLACK;
+			pic[i] = (pic[i] & 0xff) > picThreshold ? WHITE : BLACK;
 		}
 	}
 
 	static int[] findFrame(int[] pic, int width, int height)
 	{
 		int[] frame = new int[pic.length];
+		for (Vertext v : vertexts)
+		{
+			v = new Pictures().new Vertext();
+		}
+
+		hasFirstPointFound = false;
+		hasLastPointFound = false;
 
 		for (int i = 0; i < width; i++)				// 上边缘
 		{
@@ -154,14 +169,45 @@ public class Pictures
 			{
 				if (pic[j * width + i] == WHITE)
 				{
+					if (i % 50 == 0)
+					{
+						if (!hasFirstPointFound)
+						{
+							vertexts[0].x = i;
+							vertexts[0].y = j;
+							hasFirstPointFound = true;
+						}
+						else
+						{
+							vertexts[1].x = i;
+							vertexts[1].y = j;
+						}
+					}
 					frame[j * width + i] = WHITE;
 					break;
 				}
 			}
+
+			hasFirstPointFound = false;
+
 			for (int j = height - 1; j > height / 2; j--)
 			{
 				if (pic[j * width + i] == WHITE)
 				{
+					if (i % 50 == 0)
+					{
+						if (!hasFirstPointFound)
+						{
+							vertexts[2].x = i;
+							vertexts[2].y = j;
+							hasFirstPointFound = true;
+						}
+						else
+						{
+							vertexts[3].x = i;
+							vertexts[4].y = j;
+						}
+					}
 					frame[j * width + i] = WHITE;
 					break;
 				}
@@ -175,6 +221,13 @@ public class Pictures
 				if (pic[i * width + j] == WHITE)
 				{
 					frame[i * width + j] = WHITE;
+
+					// if (!hasTopPointFound)
+					// {
+					// vertexts[3].x = j;
+					// vertexts[3].y = i;
+					// hasTopPointFound = true;
+					// }
 					break;
 				}
 			}
@@ -187,7 +240,22 @@ public class Pictures
 				}
 			}
 		}
+
+		for (Vertext v : vertexts)
+			Log.d("MC", v.x + " " + v.y);
+
 		return frame;
 	}
-	
+
+	//
+	// public static void removeLonely(int[] pic)
+	// {
+	// if()
+	// }
+
+	class Vertext
+	{
+		int x = 0;
+		int y = 0;
+	}
 }
