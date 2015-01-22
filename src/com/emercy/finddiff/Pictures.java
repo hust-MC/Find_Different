@@ -7,12 +7,9 @@ public class Pictures
 	private static final int ALPHA = 0xff << 24;
 	private static final int BLACK = ALPHA | 0x0;
 	private static final int WHITE = ALPHA | 0xffffff;
-	private static final int picThreshold = 240;
 
 	public static final int WIDTH = 480, HEIGHT = 320;
 	public static final int PIC_LENGTH = WIDTH * HEIGHT;
-
-	private static boolean hasFirstPointFound;
 
 	private static Vertext[] vertexts = new Vertext[4];
 
@@ -148,20 +145,18 @@ public class Pictures
 	{
 		for (int i = 0; i < pic.length; i++)
 		{
-			pic[i] = (pic[i] & 0xff) > picThreshold ? WHITE : BLACK;
+			pic[i] = (pic[i] & 0xff) > MainActivity.thresholdValue ? WHITE
+					: BLACK;
 		}
 	}
 
 	static int[] findFrame(int[] pic, int width, int height)
 	{
 		int[] frame = new int[pic.length];
-		for (Vertext v : vertexts)
-		{
-			v = new Pictures().new Vertext();
-		}
-
-		hasFirstPointFound = false;
-		hasLastPointFound = false;
+		// for (Vertext v : vertexts)
+		// {
+		// v = new Pictures().new Vertext();
+		// }
 
 		for (int i = 0; i < width; i++)				// 上边缘
 		{
@@ -169,45 +164,15 @@ public class Pictures
 			{
 				if (pic[j * width + i] == WHITE)
 				{
-					if (i % 50 == 0)
-					{
-						if (!hasFirstPointFound)
-						{
-							vertexts[0].x = i;
-							vertexts[0].y = j;
-							hasFirstPointFound = true;
-						}
-						else
-						{
-							vertexts[1].x = i;
-							vertexts[1].y = j;
-						}
-					}
 					frame[j * width + i] = WHITE;
 					break;
 				}
 			}
 
-			hasFirstPointFound = false;
-
 			for (int j = height - 1; j > height / 2; j--)
 			{
 				if (pic[j * width + i] == WHITE)
 				{
-					if (i % 50 == 0)
-					{
-						if (!hasFirstPointFound)
-						{
-							vertexts[2].x = i;
-							vertexts[2].y = j;
-							hasFirstPointFound = true;
-						}
-						else
-						{
-							vertexts[3].x = i;
-							vertexts[4].y = j;
-						}
-					}
 					frame[j * width + i] = WHITE;
 					break;
 				}
@@ -222,12 +187,6 @@ public class Pictures
 				{
 					frame[i * width + j] = WHITE;
 
-					// if (!hasTopPointFound)
-					// {
-					// vertexts[3].x = j;
-					// vertexts[3].y = i;
-					// hasTopPointFound = true;
-					// }
 					break;
 				}
 			}
@@ -241,17 +200,8 @@ public class Pictures
 			}
 		}
 
-		for (Vertext v : vertexts)
-			Log.d("MC", v.x + " " + v.y);
-
 		return frame;
 	}
-
-	//
-	// public static void removeLonely(int[] pic)
-	// {
-	// if()
-	// }
 
 	class Vertext
 	{

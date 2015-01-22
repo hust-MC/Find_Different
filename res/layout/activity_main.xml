@@ -10,21 +10,59 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <View
-        android:layout_width="2dp"
-        android:layout_height="match_parent"
+    <Button
+        android:id="@+id/takePic_bt"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:layout_alignParentRight="true"
-        android:layout_marginBottom="60dp"
-        android:layout_marginRight="50dp"
-        android:layout_marginTop="60dp"
-        android:background="#46FF62" />
+        android:layout_centerVertical="true"
+        android:layout_marginRight="15dp"
+        android:background="@drawable/shutter"
+        android:onClick="onClick_takePic" />
+
+    <ListView
+        android:id="@+id/list_view"
+        android:layout_width="150dp"
+        android:layout_height="match_parent"
+        android:layout_marginTop="20dp"
+        android:divider="#ff555555"
+        android:dividerHeight="1.3dp"
+        android:listSelector="@android:color/holo_blue_bright"
+        android:visibility="gone" >
+    </ListView>
 
     <Button
         android:id="@+id/takePic_bt"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_alignParentBottom="true"
-        android:background="@android:color/holo_orange_light"
-        android:onClick="onClick_takePic" />
+        android:layout_alignParentLeft="true"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/menu"
+        android:onClick="onClick_menu" />
+
+    <EditText
+        android:id="@+id/input_threshold"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="20dp"
+        android:inputType="numberDecimal"
+        android:text="240"
+        android:textColor="@android:color/holo_blue_bright"
+        android:visibility="gone" />
+
+    <SeekBar
+        android:id="@+id/seekbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="50dp"
+        android:layout_toLeftOf="@id/input_threshold"
+        android:max="255"
+        android:progress="240"
+        android:visibility="gone" />
 
 </RelativeLayout>
