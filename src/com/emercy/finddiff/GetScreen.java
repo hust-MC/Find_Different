@@ -106,6 +106,7 @@ public class GetScreen implements PreviewCallback
 			camera.stopPreview();
 			camera.release();
 			camera = null;
+			isCameraOpened = false;
 		}
 	}
 
