@@ -66,4 +66,27 @@
         android:progress="240"
         android:visibility="gone" />
 
+    <View
+        android:id="@+id/topline"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginLeft="100dp"
+        android:layout_marginRight="100dp"
+        android:layout_marginTop="50dp"
+        android:background="#444" />
+
+    <View
+        android:layout_width="2dp"
+        android:layout_height="180dp"
+        android:layout_alignEnd="@id/topline"
+        android:layout_below="@id/topline"
+        android:background="#444" />
+
+    <View
+        android:layout_width="2dp"
+        android:layout_height="180dp"
+        android:layout_alignStart="@id/topline"
+        android:layout_below="@id/topline"
+        android:background="#444" />
+
 </RelativeLayout>

@@ -1,7 +1,5 @@
 package com.emercy.finddiff;
 
-import android.util.Log;
-
 public class Pictures
 {
 	private static final int ALPHA = 0xff << 24;

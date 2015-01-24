@@ -3,12 +3,8 @@ package com.emercy.finddiff;
 import java.io.IOException;
 
 import android.graphics.Bitmap;
-import android.graphics.SurfaceTexture;
 import android.os.Bundle;
 import android.app.Activity;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
@@ -116,6 +112,10 @@ public class MainActivity extends Activity
 			}
 		});
 	}
+
+	/*
+	 * 初始化动画效果
+	 */
 	private void init_animation()
 	{
 		menuInvisible = AnimationUtils.loadAnimation(this,
