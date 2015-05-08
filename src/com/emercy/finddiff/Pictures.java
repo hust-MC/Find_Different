@@ -79,6 +79,9 @@ public class Pictures
 		return bright / rgb.length;
 	}
 
+	/*
+	 * 获取八位灰度图像 数组声明为short是为了防止在后面使用过程中发生溢出
+	 */
 	private static void getBrightArray(int[] rgb, short[] brightArray)
 	{
 		int localTemp, r, g, b;
@@ -111,7 +114,10 @@ public class Pictures
 
 		int sumH = 0, sumV = 0, sum = 0;
 
-		getBrightArray(grey, brightArray);
+		for (int i = 0; i < grey.length; i++)
+		{
+			brightArray[i] = (short) (grey[i] & 0xFF);
+		}
 
 		for (int i = 1; i < height - 1; i++)
 		{

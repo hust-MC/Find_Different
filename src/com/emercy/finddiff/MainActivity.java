@@ -45,7 +45,6 @@ public class MainActivity extends Activity
 	{
 		// 初始化
 		imageView = (ImageView) findViewById(R.id.preview);
-		takePic_bt = (Button) findViewById(R.id.takePic_bt);
 		listView = (ListView) findViewById(R.id.list_view);
 		seekbar = (SeekBar) findViewById(R.id.seekbar);
 		inputThreshold = (EditText) findViewById(R.id.input_threshold);
@@ -71,7 +70,7 @@ public class MainActivity extends Activity
 					seekbar.setVisibility(View.GONE);
 					inputThreshold.setVisibility(View.GONE);
 				}
-				whichToDisplay = position;
+				whichToDisplay = position;				// 切换算法
 			}
 		});
 
