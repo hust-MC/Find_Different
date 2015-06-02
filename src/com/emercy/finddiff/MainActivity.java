@@ -87,7 +87,6 @@ public class MainActivity extends Activity
 			@Override
 			public void onStartTrackingTouch(SeekBar arg0)
 			{
-
 			}
 
 			@Override
