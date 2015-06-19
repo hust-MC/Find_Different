@@ -78,20 +78,6 @@ public class GetScreen implements PreviewCallback
 			width = size.width;
 			height = size.height;
 
-			// List<Integer> previewFormat = camera.getParameters()
-			// .getSupportedPreviewFormats();
-			// for (int i : previewFormat)
-			// {
-			// Log.d("MC", i + "");
-			// }
-			// Log.d("MC", "==============");
-			// List<Camera.Size> previewSize = camera.getParameters()
-			// .getSupportedPreviewSizes();
-			// for (Size i : previewSize)
-			// {
-			// Log.d("MC", i.width + " " + i.height);
-			// }
-
 			camera.setPreviewTexture(surfaceTexture);
 			camera.startPreview();
 			camera.setPreviewCallback(this);
