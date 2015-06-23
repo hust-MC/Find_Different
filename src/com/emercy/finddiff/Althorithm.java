@@ -1,24 +1,32 @@
 package com.emercy.finddiff;
 
-public abstract class Althorithm
-{
-	int[] rgb;
+import android.content.pm.PackageInfo;
 
-	public int[] getPicture()
-	{
-		return rgb;
-	};
+public class Althorithm
+{
+	int[] picture;
+	int width;
+	int height;
 
 	public Althorithm()
 	{
 	}
-	public Althorithm(int[] rgb)
+	public Althorithm(int[] picture, int width, int height)
 	{
-		this.rgb = rgb;
+		this.picture = picture;
+		this.width = width;
+		this.height = height;
 	}
+	public int[] getPicture()
+	{
+		return picture;
+	}
+	public void setPicture()
+	{
+	};
 }
 
-class Decorator extends Althorithm
+abstract class Decorator extends Althorithm
 {
 	Althorithm althorithm;
 
@@ -26,16 +34,37 @@ class Decorator extends Althorithm
 	{
 		this.althorithm = althorithm;
 	}
+	@Override
+	public void setPicture()
+	{
+		if (althorithm != null)
+		{
+			althorithm.setPicture();
+		}
+	}
 }
 
-class ToGrey extends Althorithm
+class ToGrey extends Decorator
 {
-	int[] grey;
+	@Override
+	public void setPicture()
+	{
+		int[] grey = null;
+		super.setPicture();
+		Pictures.convertToGrey(picture, grey);
+		althorithm.picture = grey;
+	}
+}
+
+class Sobel extends Decorator
+{
 
 	@Override
-	public int[] getPicture()
+	public void setPicture()
 	{
-		Pictures.convertToGrey(rgb, grey);
-		return grey;
+		int[] sobel = null;
+		super.setPicture();
+		Pictures.sobel(picture, width, height, sobel);
+		althorithm.picture = sobel;
 	}
 }

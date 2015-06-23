@@ -136,6 +136,8 @@ public class GetScreen implements PreviewCallback
 
 		Pictures.decodeYUV420SP(rgb, data, width, height);
 
+		Althorithm althorithm = new Althorithm(rgb, width, height);
+
 		switch (MainActivity.whichToDisplay)
 		{
 		case 1:										// 显示灰度图
